@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -18,17 +19,53 @@ public class PlayerMovement : MonoBehaviour
     public Transform groundCheckPos;
     public Vector2 groundCheckSize = new Vector2(0.5f, 0.5f);
     public LayerMask groundLayer;
+    private bool isGrounded;
+
+    [Header("Gravity")]
+    public float baseGravity = 2f;
+    public float maxFallSpeed = 10f;
+    public float fallSpeedMultiplier = 2f;
+
+    [Header("WallCheck")]
+    public Transform wallCheckPos;
+    public Vector2 wallCheckSize = new Vector2(0.5f, 0.5f);
+    public LayerMask wallLayer;
+
+    [Header("Flip")]
+    private bool isFacingRight = false;
+
+    [Header("Wall Slide")]
+    public float wallSlideMovement = 2f;
+    private bool isWallSliding = false;
+    public float wallSlideSpeed = 2f;
 
     // Update is called once per frame
     void Update()
     {
         rb.linearVelocity = new Vector2 (horizontalMovement * moveSpeed, rb.linearVelocity.y);
-        isGrounded();
+        GroundCheck();
+        Gravity();
+        CheckFlip();
+        WallSlide();
     }
+
 
     public void PlayerMove(InputAction.CallbackContext context)
     {
         horizontalMovement = context.ReadValue<Vector2>().x;
+    }
+
+    private void Gravity()
+    {
+        if (rb.linearVelocity.y < 0)
+        {
+            rb.gravityScale = baseGravity * fallSpeedMultiplier;
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, Mathf.Max(rb.linearVelocity.y, -maxFallSpeed));
+        }
+        else
+        {
+            rb.gravityScale = baseGravity;
+        }
     }
 
     public void Jump(InputAction.CallbackContext context) 
@@ -52,15 +89,56 @@ public class PlayerMovement : MonoBehaviour
     {
         Gizmos.color = Color.white;
         Gizmos.DrawCube(groundCheckPos.position, groundCheckSize);
+        Gizmos.color = Color.blue;
+        Gizmos.DrawCube(wallCheckPos.position, wallCheckSize);
     }
 
-    private bool isGrounded()
+    private bool GroundCheck()
     {
         if (Physics2D.OverlapBox(groundCheckPos.position, groundCheckSize, 0, groundLayer)) 
         {
             jumpsRemaining = maxJumps;
+            isGrounded = true;
             return true;
         }
-        return false;
+        else
+        {
+            isGrounded = false;
+            return false;
+        }
+    }
+
+    private bool WallCheck()
+    {
+        return Physics2D.OverlapBox(wallCheckPos.position, wallCheckSize, 0, wallLayer);
+    }
+
+    private void WallSlide()
+    {
+        if (!isGrounded && WallCheck() && horizontalMovement != 0)
+        {
+            isWallSliding = true;
+            rb.linearVelocity = new Vector2 (rb.linearVelocity.x , Mathf.Max(rb.linearVelocity.y, -wallSlideSpeed));
+        }
+        else
+        {
+            isWallSliding = false;
+        }
+    }
+
+    private void CheckFlip()
+    {
+        if ((isFacingRight && horizontalMovement > 0) || (!isFacingRight && horizontalMovement < 0))
+        {
+            FlipPlayer();
+        }
+    }
+
+    private void FlipPlayer()
+    {
+        isFacingRight = !isFacingRight;
+        Vector3 ls = transform.localScale;
+        ls.x *= -1f;
+        transform.localScale = ls;
     }
 }
