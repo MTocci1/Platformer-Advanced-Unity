@@ -39,14 +39,26 @@ public class PlayerMovement : MonoBehaviour
     private bool isWallSliding = false;
     public float wallSlideSpeed = 2f;
 
+    [Header("Wall Jump")]
+    private bool isWallJumping;
+    private float wallJumpDirection;
+    private float wallJumpTime = 0.5f;
+    private float wallJumpTimer;
+    public Vector2 wallJumpPower = new Vector2(5f, 10f);
+
     // Update is called once per frame
     void Update()
     {
-        rb.linearVelocity = new Vector2 (horizontalMovement * moveSpeed, rb.linearVelocity.y);
         GroundCheck();
         Gravity();
-        CheckFlip();
         WallSlide();
+        WallJump();
+
+        if (!isWallJumping)
+        {
+            rb.linearVelocity = new Vector2(horizontalMovement * moveSpeed, rb.linearVelocity.y);
+            CheckFlip();
+        }
     }
 
 
@@ -83,6 +95,37 @@ public class PlayerMovement : MonoBehaviour
                 jumpsRemaining--;
             }
         }
+
+        if (context.performed && wallJumpTimer > 0f)
+        {
+            isWallJumping = true;
+            rb.linearVelocity = new Vector2(wallJumpDirection * wallJumpPower.x, wallJumpPower.y);
+            wallJumpTimer = 0f;
+            Invoke(nameof(CancelWallJump), wallJumpTime + 0.1f);
+        }
+        if (transform.localScale.x != wallJumpDirection)
+        {
+            FlipPlayer();
+        }
+    }
+
+    private void WallJump()
+    {
+        if(isWallSliding)
+        {
+            wallJumpDirection = -transform.localScale.x;
+            wallJumpTimer = wallJumpTime;
+            CancelInvoke(nameof(CancelWallJump));
+        }
+        else if (wallJumpTimer > 0f)
+        {
+            wallJumpTimer -= Time.deltaTime;
+        }
+    }
+
+    private void CancelWallJump()
+    {
+        isWallJumping = false;
     }
 
     private void OnDrawGizmosSelected()
@@ -99,6 +142,8 @@ public class PlayerMovement : MonoBehaviour
         {
             jumpsRemaining = maxJumps;
             isGrounded = true;
+            isWallJumping = false;
+            isWallSliding = false;
             return true;
         }
         else
