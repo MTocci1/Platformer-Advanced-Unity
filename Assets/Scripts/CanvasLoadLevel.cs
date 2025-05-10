@@ -1,11 +1,13 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class CanvasLoadLevel : MonoBehaviour
 {
     public float holdDuration = 1.0f;
     public Image filledCircle;
+    public string nextScene;
     private float holdTimer = 0f;
     private bool isHolding = false;
 
@@ -17,7 +19,7 @@ public class CanvasLoadLevel : MonoBehaviour
             filledCircle.fillAmount = holdTimer / holdDuration;
             if (holdTimer > holdDuration)
             {
-                // Load Next Level
+                SceneManager.LoadScene(nextScene);
             }
         }
     }
