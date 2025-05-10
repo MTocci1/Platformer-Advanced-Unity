@@ -1,2 +1,2 @@
-# 2D-Dungeon-Crawler
+# Platformer-Advance-Unity
 Project for Advanced Unity course
